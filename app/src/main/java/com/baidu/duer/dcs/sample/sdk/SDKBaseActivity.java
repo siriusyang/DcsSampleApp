@@ -18,7 +18,10 @@ package com.baidu.duer.dcs.sample.sdk;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.AssetFileDescriptor;
+import android.content.res.AssetManager;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -94,14 +97,15 @@ import com.baidu.duer.dcs.widget.DcsWebView;
 import com.baidu.duer.kitt.KittWakeUpServiceImpl;
 import com.baidu.duer.kitt.WakeUpConfig;
 import com.baidu.duer.kitt.WakeUpWord;
+import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -112,7 +116,7 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
     public static final String TAG = "DCS-SDK";
     // demo使用的CLIENT_ID，正式产品请用自己申请的CLIENT_ID、PID
     public static final String CLIENT_ID = BuildConfig.CLIENT_ID;
-    public static final int PID = BuildConfig.PID ;
+    public static final int PID = BuildConfig.PID;
     public static final String APP_KEY = BuildConfig.APP_KEY;
     // 唤醒配置
     // 格式必须为：浮点数，用','分隔，每个模型对应3个灵敏度
@@ -133,6 +137,7 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
     private Button playButton;
     private Button voiceButton;
     private Button cancelVoiceButton;
+    private Button id_paly_local_btn;
     private boolean isPlaying;
     private TextView textViewWakeUpTip;
     private LinearLayout mTopLinearLayout;
@@ -144,11 +149,15 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
     protected TextView textViewRenderVoiceInputText;
     private IDialogStateListener dialogStateListener;
     private IDialogStateListener.DialogState currentDialogState = IDialogStateListener.DialogState.IDLE;
+    private Gson json;
+    private MediaPlayer mediaPlayer;
+    public boolean isPlaying2 = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.sdk_main);
+        json = new Gson();
         setTitle(BuildConfig.APP_TITLE);
         initViews();
         initPermission();
@@ -228,17 +237,19 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
 
         @Override
         public void onHtmlPayload(HtmlPayload htmlPayload) {
+            Log.e(TAG, "HtmlPayload:" + json.toJson(htmlPayload, HtmlPayload.class));
+
             handleHtmlPayload(htmlPayload);
         }
 
         @Override
         public void onRenderCard(RenderCardPayload renderCardPayload) {
-
+            Log.e(TAG, "renderCardPayload:" + json.toJson(renderCardPayload, RenderCardPayload.class));
         }
 
         @Override
         public void onRenderHint(RenderHintPayload renderHintPayload) {
-
+            Log.e(TAG, "RenderHintPayload:" + json.toJson(renderHintPayload, RenderHintPayload.class));
         }
     };
 
@@ -271,6 +282,7 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
                             Toast.LENGTH_SHORT)
                             .show();
                 } else {
+                    Log.e(TAG, getResources().getString(R.string.voice_err_msg));
                     Toast.makeText(SDKBaseActivity.this,
                             getResources().getString(R.string.voice_err_msg),
                             Toast.LENGTH_SHORT)
@@ -505,7 +517,6 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
         CustomUserInteractionDeviceModule customUserInteractionDeviceModule =
                 new CustomUserInteractionDeviceModule(messageSender, dialogRequestIdHandler);
         dcsSdk.putDeviceModule(customUserInteractionDeviceModule);
-
         // 扩展自定义DeviceModule,eg...
         addOtherDeviceModule(dcsSdk, messageSender);
         // 获取设备列表
@@ -549,7 +560,6 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
 
         @Override
         public void onRenderAudioList(RenderAudioListPlayload renderAudioListPlayload) {
-
         }
     };
 
@@ -595,7 +605,9 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
         voiceButton = (Button) findViewById(R.id.voiceBtn);
         voiceButton.setOnClickListener(this);
         cancelVoiceButton = (Button) findViewById(R.id.cancelBtn);
+        id_paly_local_btn = (Button) findViewById(R.id.id_paly_local_btn);
         cancelVoiceButton.setOnClickListener(this);
+        id_paly_local_btn.setOnClickListener(this);
         textViewRenderVoiceInputText = (TextView) findViewById(R.id.id_tv_RenderVoiceInputText);
         mTopLinearLayout = (LinearLayout) findViewById(R.id.topLinearLayout);
         dcsWebView = new DcsWebView(this.getApplicationContext());
@@ -690,6 +702,8 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
                 if (directive == null) {
                     return;
                 }
+
+                Log.e(TAG, "指令:" + json.toJson(directive, Directive.class));
                 if (directive.getName().equals("Play")) {
                     Payload mPayload = directive.getPayload();
                     if (mPayload instanceof com.baidu.duer.dcs.devicemodule.audioplayer.message.PlayPayload) {
@@ -747,6 +761,67 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
+            case R.id.id_paly_local_btn:
+                //https://www.cnblogs.com/plokmju/p/android_MediaPlayer.html
+
+                if (mediaPlayer == null) {
+                    mediaPlayer = new MediaPlayer();
+                }
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.pause();
+                    if (isPlaying2) {
+                        id_paly_local_btn.setText("继续播放本地音乐");
+                    } else {
+                        id_paly_local_btn.setText("播放本地音乐");
+                    }
+                } else {
+                    try {
+                        if (isPlaying2) {
+                            mediaPlayer.start();
+                            id_paly_local_btn.setText("停止播放");
+                            return;
+                        }
+                        id_paly_local_btn.setText("缓冲音乐...");
+//                        mediaPlayer.setDataSource("/sdcard/Music/RichardClayderman.mp3");
+                        AssetManager am = getAssets();
+                        AssetFileDescriptor fileDescriptor = am.openFd("Bandari.mp3");
+                        mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(), fileDescriptor.getStartOffset(),
+                                fileDescriptor.getStartOffset());
+                        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                        mediaPlayer.prepareAsync();
+                        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                            @Override
+                            public void onPrepared(MediaPlayer mp) {
+                                // 装载完毕回调
+                                mediaPlayer.start();
+                                id_paly_local_btn.setText("停止播放");
+                                isPlaying2 = true;
+                            }
+                        });
+                        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+
+                            @Override
+                            public void onCompletion(MediaPlayer mp) {
+                                // 在播放完毕被回调
+                                isPlaying2 = false;
+                                id_paly_local_btn.setText("播放本地音乐");
+                            }
+                        });
+                        mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+
+                            @Override
+                            public boolean onError(MediaPlayer mp, int what, int extra) {
+                                isPlaying2 = false;
+                                return false;
+                            }
+                        });
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        isPlaying = false;
+                    }
+                }
+                break;
             case R.id.id_next_audio_btn:
                 if (CommonUtil.isFastDoubleClick()) {
                     return;
@@ -929,6 +1004,11 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
 
     @Override
     protected void onDestroy() {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
         super.onDestroy();
         Log.d(TAG, "onDestroy");
         // dcsWebView

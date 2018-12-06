@@ -60,6 +60,11 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/next_audio" />
+        <Button
+            android:id="@+id/id_paly_local_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="播放本地音乐"/>
     </LinearLayout>
 
     <TextView

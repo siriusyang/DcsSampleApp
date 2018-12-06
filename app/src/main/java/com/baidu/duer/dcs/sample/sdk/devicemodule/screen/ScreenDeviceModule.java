@@ -15,6 +15,8 @@
  */
 package com.baidu.duer.dcs.sample.sdk.devicemodule.screen;
 
+import android.util.Log;
+
 import com.baidu.duer.dcs.util.util.FileUtil;
 import com.baidu.duer.dcs.util.message.HandleDirectiveException;
 import com.baidu.duer.dcs.api.BaseDeviceModule;
@@ -33,6 +35,7 @@ import com.baidu.duer.dcs.sample.sdk.devicemodule.screen.message.RenderCardPaylo
 import com.baidu.duer.dcs.sample.sdk.devicemodule.screen.message.RenderHintPayload;
 import com.baidu.duer.dcs.sample.sdk.devicemodule.screen.message.RenderVoiceInputTextPayload;
 import com.baidu.duer.dcs.sample.sdk.devicemodule.screen.message.ViewStatePayload;
+import com.google.gson.Gson;
 
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +66,7 @@ public class ScreenDeviceModule extends BaseDeviceModule {
 
     @Override
     public void handleDirective(Directive directive) throws HandleDirectiveException {
+        Log.e("DCS-SDK", "Directive:" + new Gson().toJson(directive,Directive.class));
         String name = directive.header.getName();
         if (name.equals(ApiConstants.Directives.HtmlView.NAME)) {
             handleHtmlPayload(directive.getPayload());

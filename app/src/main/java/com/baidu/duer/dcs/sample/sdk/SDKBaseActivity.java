@@ -72,6 +72,7 @@ import com.baidu.duer.dcs.router.ICES;
 import com.baidu.duer.dcs.router.IFlow;
 import com.baidu.duer.dcs.sample.BuildConfig;
 import com.baidu.duer.dcs.sample.R;
+import com.baidu.duer.dcs.sample.sdk.commands.BaseCommand;
 import com.baidu.duer.dcs.sample.sdk.devicemodule.screen.ScreenDeviceModule;
 import com.baidu.duer.dcs.sample.sdk.devicemodule.screen.extend.card.ScreenExtendDeviceModule;
 import com.baidu.duer.dcs.sample.sdk.devicemodule.screen.extend.card.message.RenderAudioListPlayload;
@@ -107,6 +108,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.baidu.duer.dcs.sample.sdk.devicemodule.screen.message.RenderCardPayload.Type.TextCard;
 
 /**
  * 录音权限问题，需要自己处理
@@ -245,6 +248,26 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
         @Override
         public void onRenderCard(RenderCardPayload renderCardPayload) {
             Log.e(TAG, "renderCardPayload:" + json.toJson(renderCardPayload, RenderCardPayload.class));
+            if (renderCardPayload != null && TextCard == renderCardPayload.type) {
+                try {
+                    BaseCommand command2 = json.fromJson(renderCardPayload.content, BaseCommand.class);
+                    String command = command2.getCommend();
+                    if ("暂停".equalsIgnoreCase(command)) {
+                        pause();
+                    } else if ("播放".equalsIgnoreCase(command)) {
+                        if (mediaPlayer != null && !mediaPlayer.isPlaying() && isPlaying2) {
+                            mediaPlayer.start();
+                        } else {
+                            palyMusic(command);
+                        }
+                    } else {
+                        palyMusic(command);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "renderCardPayload_Exception" + e.getMessage());
+                }
+            }
+
         }
 
         @Override
@@ -252,6 +275,65 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
             Log.e(TAG, "RenderHintPayload:" + json.toJson(renderHintPayload, RenderHintPayload.class));
         }
     };
+
+    private void pause() {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+        }
+    }
+
+    private void palyMusic(String ss) {
+        //https://www.cnblogs.com/plokmju/p/android_MediaPlayer.html
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+        if (mediaPlayer == null) {
+            mediaPlayer = new MediaPlayer();
+        }
+        Log.e(TAG, "歌曲名：" + ss);
+        try {
+            id_paly_local_btn.setText("缓冲音乐...");
+//                        mediaPlayer.setDataSource("/sdcard/Music/RichardClayderman.mp3");
+            AssetManager am = getAssets();
+            AssetFileDescriptor fileDescriptor = am.openFd(ss);
+            mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(), fileDescriptor.getStartOffset(),
+                    fileDescriptor.getStartOffset());
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    // 装载完毕回调
+                    mediaPlayer.start();
+                    id_paly_local_btn.setText("停止播放");
+                    isPlaying2 = true;
+                }
+            });
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    // 在播放完毕被回调
+                    isPlaying2 = false;
+                    id_paly_local_btn.setText("播放本地音乐");
+                }
+            });
+            mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                    isPlaying2 = false;
+                    return false;
+                }
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            isPlaying = false;
+        }
+    }
 
     private IDcsRequestBodySentListener dcsRequestBodySentListener = new IDcsRequestBodySentListener() {
 
@@ -643,6 +725,7 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
     private IWakeupAgent.IWakeupAgentListener wakeupAgentListener = new IWakeupAgent.SimpleWakeUpAgentListener() {
         @Override
         public void onWakeupSucceed(WakeUpWord wakeUpWord) {
+            pause();
             Toast.makeText(SDKBaseActivity.this,
                     "唤醒成功",
                     Toast.LENGTH_LONG).show();
@@ -762,65 +845,7 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.id_paly_local_btn:
-                //https://www.cnblogs.com/plokmju/p/android_MediaPlayer.html
 
-                if (mediaPlayer == null) {
-                    mediaPlayer = new MediaPlayer();
-                }
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.pause();
-                    if (isPlaying2) {
-                        id_paly_local_btn.setText("继续播放本地音乐");
-                    } else {
-                        id_paly_local_btn.setText("播放本地音乐");
-                    }
-                } else {
-                    try {
-                        if (isPlaying2) {
-                            mediaPlayer.start();
-                            id_paly_local_btn.setText("停止播放");
-                            return;
-                        }
-                        id_paly_local_btn.setText("缓冲音乐...");
-//                        mediaPlayer.setDataSource("/sdcard/Music/RichardClayderman.mp3");
-                        AssetManager am = getAssets();
-                        AssetFileDescriptor fileDescriptor = am.openFd("Bandari.mp3");
-                        mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(), fileDescriptor.getStartOffset(),
-                                fileDescriptor.getStartOffset());
-                        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                        mediaPlayer.prepareAsync();
-                        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                            @Override
-                            public void onPrepared(MediaPlayer mp) {
-                                // 装载完毕回调
-                                mediaPlayer.start();
-                                id_paly_local_btn.setText("停止播放");
-                                isPlaying2 = true;
-                            }
-                        });
-                        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-
-                            @Override
-                            public void onCompletion(MediaPlayer mp) {
-                                // 在播放完毕被回调
-                                isPlaying2 = false;
-                                id_paly_local_btn.setText("播放本地音乐");
-                            }
-                        });
-                        mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-
-                            @Override
-                            public boolean onError(MediaPlayer mp, int what, int extra) {
-                                isPlaying2 = false;
-                                return false;
-                            }
-                        });
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        isPlaying = false;
-                    }
-                }
                 break;
             case R.id.id_next_audio_btn:
                 if (CommonUtil.isFastDoubleClick()) {
@@ -929,6 +954,7 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
                 if (CommonUtil.isFastDoubleClick()) {
                     return;
                 }
+                pause();
                 // 为了解决频繁的点击 而服务器没有时间返回结果造成的不能点击的bug
                 if (currentDialogState == IDialogStateListener.DialogState.LISTENING) {
                     dcsSdk.getVoiceRequest().endVoiceRequest(new IVoiceRequestListener() {
@@ -1009,6 +1035,7 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        BaseCommand.current = 0;
         super.onDestroy();
         Log.d(TAG, "onDestroy");
         // dcsWebView

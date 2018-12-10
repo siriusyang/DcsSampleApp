@@ -14,6 +14,30 @@
         android:textColor="@android:color/black"
         android:textSize="16sp" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="第一步：点击“点击说话”按钮说出：【开启技能调试模式】，如果你已经开启技能调试模式可以忽略这一步"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="第二步：点击“点击说话”按钮说出：【打开点歌模式】"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="第三步：点击“点击说话”按钮说出：【雪之梦】/【月光曲】/【梦中的婚礼】/【上一首】/【下一首】/【暂停】/【播放】"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -38,7 +62,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:visibility="invisible">
 
         <Button
             android:id="@+id/id_previous_audio"
@@ -60,11 +85,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/next_audio" />
+
         <Button
             android:id="@+id/id_paly_local_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="播放本地音乐"/>
+            android:text="播放本地音乐" />
     </LinearLayout>
 
     <TextView
@@ -107,9 +133,9 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
+        android:layout_marginBottom="10dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:orientation="horizontal">

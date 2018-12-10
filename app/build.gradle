@@ -13,7 +13,7 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         manifestPlaceholders = [APP_NAME: "DcsAclDemo"]
-        buildConfigField("String", "CLIENT_ID", "\"d8ITlI9aeTPaGcxKKsZit8tq\"")
+        buildConfigField("String", "CLIENT_ID", "\"wjtBlBQyqhf3Tsoww3HGp24uoReV0qLH\"")
         buildConfigField("int", "PID", "1704")
         buildConfigField("String", "APP_KEY", "\"com.baidu.dumi.open.far\"")
         buildConfigField("String", "APP_TITLE", "\"dcs-sdk-\"+com.baidu.duer.dcs.util.util.DcsGlobalConfig.VERSION_NAME")

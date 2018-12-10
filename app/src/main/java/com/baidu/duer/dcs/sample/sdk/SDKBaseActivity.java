@@ -29,10 +29,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -144,12 +146,14 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
     private boolean isPlaying;
     private TextView textViewWakeUpTip;
     private LinearLayout mTopLinearLayout;
+    private ScrollView id_sv_request;
     private DcsWebView dcsWebView;
     private ILocation location;
     // for dcs统计-demo
     private long duerResultT;
     // for dcs统计-demo
     protected TextView textViewRenderVoiceInputText;
+    protected TextView Messages_received_from_DuerOS;
     private IDialogStateListener dialogStateListener;
     private IDialogStateListener.DialogState currentDialogState = IDialogStateListener.DialogState.IDLE;
     private Gson json;
@@ -248,6 +252,11 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
         @Override
         public void onRenderCard(RenderCardPayload renderCardPayload) {
             Log.e(TAG, "renderCardPayload:" + json.toJson(renderCardPayload, RenderCardPayload.class));
+            Messages_received_from_DuerOS.append("\n-----------\n");
+            Messages_received_from_DuerOS.append(json.toJson(renderCardPayload, RenderCardPayload.class));
+            Messages_received_from_DuerOS.append("\n-----------");
+            Messages_received_from_DuerOS.append("\n");
+//            id_sv_request.fullScroll(ScrollView.FOCUS_DOWN);
             if (renderCardPayload != null && TextCard == renderCardPayload.type) {
                 try {
                     BaseCommand command2 = json.fromJson(renderCardPayload.content, BaseCommand.class);
@@ -674,6 +683,18 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
     }
 
     private void initViews() {
+
+        id_sv_request = (ScrollView) findViewById(R.id.id_sv_request);
+        id_sv_request.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                id_sv_request.post(new Runnable() {
+                    public void run() {
+                        id_sv_request.fullScroll(View.FOCUS_DOWN);
+                    }
+                });
+            }
+        });
         textViewWakeUpTip = (TextView) findViewById(R.id.id_tv_wakeup_tip);
         nextButton = (Button) findViewById(R.id.id_next_audio_btn);
         nextButton.setOnClickListener(this);
@@ -691,6 +712,7 @@ public abstract class SDKBaseActivity extends AppCompatActivity implements
         cancelVoiceButton.setOnClickListener(this);
         id_paly_local_btn.setOnClickListener(this);
         textViewRenderVoiceInputText = (TextView) findViewById(R.id.id_tv_RenderVoiceInputText);
+        Messages_received_from_DuerOS = (TextView) findViewById(R.id.Messages_received_from_DuerOS);
         mTopLinearLayout = (LinearLayout) findViewById(R.id.topLinearLayout);
         dcsWebView = new DcsWebView(this.getApplicationContext());
         mTopLinearLayout.addView(dcsWebView);

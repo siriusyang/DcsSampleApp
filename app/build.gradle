@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         applicationId "com.baidu.duer.dcs"
@@ -75,6 +75,10 @@ android {
         exclude 'META-INF/ASL2.0'
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 repositories {
@@ -83,7 +87,7 @@ repositories {
     }
 }
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
@@ -92,20 +96,15 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:28.0.0'
     compile 'com.android.support:design:28.0.0'
-
     // 百度url音频播放器
     compile name: 'bdplayer-release', ext: 'aar'
     // 定位
     compile project(':location')
     // 可选-------
-
     def jacksonVersion = '2.9.1'
     compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     compile "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
-
     compile 'com.android.support:multidex:1.0.3'
-
     implementation 'com.google.code.gson:gson:2.8.0'
-
 }
